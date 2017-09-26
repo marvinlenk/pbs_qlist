@@ -11,7 +11,7 @@ parser.add_argument("-t","--tags", help="print a list of all possible tags to pr
 parser.add_argument("-q","--queue", help="print only jobs of the specific queue", action="store", default="")
 args = parser.parse_args()
 
-if not args.all and not args.user != '':
+if not args.all and args.user == '' and args.queue == '':
     args.user = os.environ['USER']
 
 # takes everything that can be converted to integer seconds and returns formated time string
