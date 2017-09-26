@@ -14,8 +14,6 @@ args = parser.parse_args()
 if args.me:
     args.user = os.environ['USER']
 
-
-
 # takes everything that can be converted to integer seconds and returns formated time string
 def str_from_sec(seconds):
 	hours = int(int(seconds) / 3600)
@@ -38,6 +36,12 @@ f = os.popen('qstat -x')
 tree = ET.parse(f)
 root = tree.getroot()
 n_fields=len(names)
+
+if args.tags:
+    # create a list of possible fields
+    possible_options = [pfield.tag for pfield in root[0]]
+    [print(el) for el in possible_options]
+    exit()
 
 # set up the jobs
 jobs = []
@@ -86,12 +90,7 @@ for job in root:
 			else:
 				jobs[ind].append(job.find(field).text)
 		ind += 1
-
-if args.tags:
-    # create a list of possible fields
-    possible_options = [pfield.tag for pfield in root[0]]
-    print(possible_options)
-
+		
 max_lengths=[len(name) for name in names]
 sep='  '
 
