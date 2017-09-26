@@ -6,12 +6,12 @@ import time
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-u","--user", help="select only jobs by user", action="store", default="")
-parser.add_argument("-m","--me", help="automatically choose yourself as user", action="store_true")
+parser.add_argument("-a","--all", help="show all users", action="store_true")
 parser.add_argument("-t","--tags", help="print a list of all possible tags to print out", action="store_true")
 parser.add_argument("-q","--queue", help="print only jobs of the specific queue", action="store", default="")
 args = parser.parse_args()
 
-if args.me:
+if not args.all and not args.user != '':
     args.user = os.environ['USER']
 
 # takes everything that can be converted to integer seconds and returns formated time string
