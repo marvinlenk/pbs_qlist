@@ -1,5 +1,7 @@
 # pbs_qlist
 A Uni-Bonn BAF-Cluster PBS qstat parser for Python3
+Props to Oliver Evans and JLT for providing the basis of this program:
+https://stackoverflow.com/questions/26104116/qstat-and-long-job-names
 
 Takes the qstat -x output and parses it to a nicer and cleaner output.
 Options are explained by qlist --help
