@@ -1,0 +1,127 @@
+#!/lustre/user/mlenk/.local/bin/python3.6
+import os
+import xml.etree.ElementTree as ET
+import time
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("-u","--user", help="select only jobs by user", action="store", default="")
+parser.add_argument("-m","--mlenk", help="automatically choose mlenk as user", action="store_true")
+parser.add_argument("-t","--tags", help="print a list of all possible tags to print out", action="store_true")
+parser.add_argument("-q","--queue", help="print only jobs of the specific queue", action="store", default="")
+args = parser.parse_args()
+
+if args.mlenk:
+    args.user = "mlenk"
+
+
+# takes everything that can be converted to integer seconds and returns formated time string
+def str_from_sec(seconds):
+	hours = int(int(seconds) / 3600)
+	minutes = int((int(seconds) - hours * 3600) / 60)
+	return str(hours)+':'+str(minutes)
+
+def str_from_kb(kilobytes):
+	return str(int(int(kilobytes[:-2])/(1024**2)))
+
+#Fields - note that resources used basically gives vmem and walltime so ther is one name more than fields
+fields=['Job_Id','Job_Owner','queue','job_state','Job_Name','resources_used','Walltime','exec_host']
+names=['Job ID','Owner','Queue','S','Job Name','Memory','Walltime hh:mm','T-','Nodes(CPUs)']
+clean_fields=['Job_Id','Job_Owner']
+
+# Store indices of fields to clean from additional signs
+clean_indices = [fields.index(field) for field in clean_fields] 
+
+#Get job info
+f = os.popen('qstat -x')
+tree = ET.parse(f)
+root = tree.getroot()
+n_fields=len(names)
+
+# set up the jobs
+jobs = []
+ind = 0
+for job in root:
+	if args.user in job.find('Job_Owner').text and args.queue in job.find('queue').text:
+		jobs.append([])
+		for field in fields:
+			if job.find(field) == None:
+				if field == 'resources_used':
+					jobs[ind].append('---')
+				jobs[ind].append('---')
+			elif field == 'Walltime':
+				tmpstr = str_from_sec(job.find('Walltime').find('Remaining').text)
+				jobs[ind].append(tmpstr)
+			elif field == 'resources_used':
+				# the memory part
+				tmpstr = str_from_kb(job.find(field).find('vmem').text)
+				tmpstr += ' / '
+				tmpstr += job.find('Resource_List').find('mem').text[:-2]
+				tmpstr += ' GB'
+				jobs[ind].append(tmpstr)
+				# the walltime part
+				tmpstr = job.find(field).find('walltime').text[:-3]
+				tmpstr += " / "
+				tmpstr += job.find('Resource_List').find('walltime').text[:-3]
+				jobs[ind].append(tmpstr)
+			elif field == 'exec_host':
+				tmpnodes = job.find(field).text.split('+')
+				# list of lists ['node',counter]
+				nodeslist = []
+				cpucount = []
+				for nodestr in tmpnodes:
+					node,cpu = nodestr.split('/')
+					if node in nodeslist:
+						cpucount[nodeslist.index(node)] += 1
+					else:
+						nodeslist.append(node)
+						cpucount.append(1)
+				tmpstr = ''
+				for node in nodeslist:
+					tmpstr += ', ' + node + '(%i)' % cpucount[nodeslist.index(node)]
+				if len(tmpstr) == 0:
+					tmpstr = '  ---'
+				jobs[ind].append(tmpstr[2:])
+			else:
+				jobs[ind].append(job.find(field).text)
+		ind += 1
+
+if args.tags:
+    # create a list of possible fields
+    possible_options = [pfield.tag for pfield in root[0]]
+    print(possible_options)
+
+max_lengths=[len(name) for name in names]
+sep='  '
+
+#Identify max characer length per field
+for j in jobs:
+    for i in clean_indices:
+            #Chop off anything after and including '@' or '.' from all fields
+            if j[i].find('@')>0:
+                    j[i]=j[i][:j[i].find('@')]
+            if j[i].find('.')>0:
+                    j[i]=j[i][:j[i].find('.')]
+    
+    for i in range(0,n_fields):
+        if(len(j[i])>max_lengths[i]):
+                max_lengths[i]=len(j[i])
+
+#Field names
+for i in range(n_fields):
+    print('{s:^{length}}'.format(s=names[i],length=max_lengths[i]),end=sep)
+print()
+
+#Dashes
+for i in range(n_fields):
+    print('-'*max_lengths[i],end=sep)
+print()
+
+#Jobs
+for j in jobs:
+	for i in range(n_fields):
+			if j[i].find('@')>0:
+					j[i]=j[i][:j[i].find('@')]
+			print('{s:<{length}}'.format(s=j[i],length=max_lengths[i]),end=sep)
+	print()
+
