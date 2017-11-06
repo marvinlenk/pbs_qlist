@@ -1,0 +1,3 @@
+NODE=`qstat -n $1 | tail -n1 | cut -d'+' -f 2 | cut -d'/' -f 1 | tr -d '[:space:]'`
+QUEUE=`qstat $1 | tail -n1 | cut -d'R' -f2 | cut -d' ' -f2`
+qsub -I -q $QUEUE -l nodes=$NODE -l mem=1gb -l walltime=0:05:00
