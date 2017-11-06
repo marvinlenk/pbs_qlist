@@ -29,7 +29,7 @@ Tada! Now it should work.
 Please note, that the command sometimes takes more time than expected and is usually slower than qstat itself.
 I guess this is due to lustre performance problems, since the code is not CPU heavy at all.
 
-Concerning qint:
+# qint
 With this bash command you can very easily start an interactive job on the same node as the job specified.
 To use this program, basically repeat the same steps as for qlist but without the python part (since it is bash).
 
