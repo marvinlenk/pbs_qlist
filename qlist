@@ -9,19 +9,21 @@ parser.add_argument("-u","--user", help="select only jobs by user", action="stor
 parser.add_argument("-a","--all", help="show all users", action="store_true")
 parser.add_argument("-t","--tags", help="print a list of all possible tags to print out", action="store_true")
 parser.add_argument("-q","--queue", help="print only jobs of the specific queue", action="store", default="")
+parser.add_argument("-e","--expand", help="expands list of job arrays", action="store_true")
 args = parser.parse_args()
 
 if not args.all and args.user == '' and args.queue == '':
     args.user = os.environ['USER']
 
+
 # takes everything that can be converted to integer seconds and returns formated time string
 def str_from_sec(seconds):
-	hours = int(int(seconds) / 3600)
-	minutes = int((int(seconds) - hours * 3600) / 60)
-	return str(hours)+':'+str(minutes)
+    hours = int(int(seconds) / 3600)
+    minutes = int((int(seconds) - hours * 3600) / 60)
+    return str(hours)+':'+str(minutes)
 
 def str_from_kb(kilobytes):
-	return str(int(int(kilobytes[:-2])/(1024**2)))
+    return str(int(int(kilobytes[:-2])/(1024**2)))
 
 #Fields - note that resources used basically gives vmem and walltime so ther is one name more than fields
 fields=['Job_Id','Job_Owner','queue','job_state','Job_Name','resources_used','Walltime','exec_host']
@@ -32,7 +34,10 @@ clean_fields=['Job_Id','Job_Owner']
 clean_indices = [fields.index(field) for field in clean_fields] 
 
 #Get job info
-f = os.popen('qstat -x')
+if args.expand:
+	f = os.popen('qstat -xt')
+else:
+	f = os.popen('qstat -x')
 tree = ET.parse(f)
 root = tree.getroot()
 n_fields=len(names)
@@ -90,7 +95,7 @@ for job in root:
 			else:
 				jobs[ind].append(job.find(field).text)
 		ind += 1
-		
+
 max_lengths=[len(name) for name in names]
 sep='  '
 
@@ -124,4 +129,3 @@ for j in jobs:
 					j[i]=j[i][:j[i].find('@')]
 			print('{s:<{length}}'.format(s=j[i],length=max_lengths[i]),end=sep)
 	print()
-
